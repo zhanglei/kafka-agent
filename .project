@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>kafka-agent-cdh6.1.0</name>
+	<name>kafka-agent</name>
 	<comment></comment>
 	<projects>
 	</projects>
