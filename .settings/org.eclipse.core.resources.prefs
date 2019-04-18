@@ -1,0 +1,14 @@
+eclipse.preferences.version=1
+encoding//src/main/java=UTF-8
+encoding//src/main/resources=UTF-8
+encoding//src/main/resources/app.properties=UTF-8
+encoding//src/main/resources/db_dbcp.properties=UTF-8
+encoding//src/main/resources/dev/app.properties=UTF-8
+encoding//src/main/resources/dev/db_dbcp.properties=UTF-8
+encoding//src/main/resources/prod/app.properties=UTF-8
+encoding//src/main/resources/prod/db_dbcp.properties=UTF-8
+encoding//src/main/resources/test/db_dbcp.properties=UTF-8
+encoding//src/test/java=UTF-8
+encoding//src/test/java/com/hncy58/kafka/app.properties=UTF-8
+encoding//src/test/resources=UTF-8
+encoding/<project>=UTF-8
