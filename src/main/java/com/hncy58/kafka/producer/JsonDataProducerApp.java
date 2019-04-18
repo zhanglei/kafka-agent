@@ -35,8 +35,13 @@ public class JsonDataProducerApp {
 	public static final String[] DB_ID_ARR = new String[] { "test" };
 	// public static final String[] TBL_ID_ARR = new String[] { "ccs_customer",
 	// "ccs_acct", "ccs_order"};
-	public static final String[] TBL_ID_ARR = new String[] { "ccs_order_1", "ccs_order_2", "ccs_order_3", "ccs_order_4",
-			"ccs_order_5", "ccs_order_6", "ccs_order_7", "ccs_order_8", "ccs_order_9", "ccs_order_10" };
+	public static final String[] TBL_ID_ARR = new String[] { 
+			"ccs_order_1", "ccs_order_2", "ccs_order_3", "ccs_order_4", "ccs_order_5", "ccs_order_6", "ccs_order_7", "ccs_order_8", "ccs_order_9", "ccs_order_10" 
+			,"ccs_order_11", "ccs_order_12", "ccs_order_13", "ccs_order_14", "ccs_order_15", "ccs_order_16", "ccs_order_17", "ccs_order_18", "ccs_order_19", "ccs_order_20" 
+			,"ccs_order_21", "ccs_order_22", "ccs_order_23", "ccs_order_24", "ccs_order_25", "ccs_order_26", "ccs_order_27", "ccs_order_28", "ccs_order_29", "ccs_order_30" 
+			,"ccs_order_31", "ccs_order_32", "ccs_order_33", "ccs_order_34", "ccs_order_35", "ccs_order_36", "ccs_order_37", "ccs_order_38", "ccs_order_39", "ccs_order_40" 
+			,"ccs_order_41", "ccs_order_42", "ccs_order_43", "ccs_order_44", "ccs_order_45", "ccs_order_46", "ccs_order_47", "ccs_order_48", "ccs_order_49", "ccs_order_50" 
+			};
 	public static final String[] OPR_TYPE_ARR = new String[] { "i", "u", "d" };
 
 	public static String TOPIC_NAME = "sit_sync_prodccsdb_0";
@@ -128,6 +133,11 @@ public class JsonDataProducerApp {
 					valueMap.put("ORG", random.nextInt(100000));
 					valueMap.put("name", "name" + random.nextInt(100000));
 					valueMap.put("cert_id", "43052119890625" + random.nextInt(10000));
+					
+					for (int i = 0; i < 300; i++) {
+						valueMap.put("cert_id_" + i, "43052119890625" + random.nextInt(10000));
+					}
+					
 					valueMap.put("gender", random.nextInt(2));
 					valueMap.put("year_income", random.nextFloat() * 200000);
 					valueMap.put("birth", System.currentTimeMillis());

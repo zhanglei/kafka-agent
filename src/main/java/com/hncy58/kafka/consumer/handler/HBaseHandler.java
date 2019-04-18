@@ -3,20 +3,24 @@ package com.hncy58.kafka.consumer.handler;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Delete;
@@ -39,6 +43,9 @@ public class HBaseHandler implements Handler {
 	private String zkPort = "2181";
 	private String hbaseColumnFamilyName = "info";
 	private String localFileNamePrefix = "unHadledData";
+	private boolean inited = false;
+
+	private Set<String> allTables = new HashSet<String>();
 
 	public HBaseHandler(String zkServers, String zkPort, String hbaseColumnFamilyName, String localFileNamePrefix) {
 		super();
@@ -46,10 +53,20 @@ public class HBaseHandler implements Handler {
 		this.zkPort = zkPort;
 		this.hbaseColumnFamilyName = hbaseColumnFamilyName;
 		this.localFileNamePrefix = localFileNamePrefix;
+
+		try {
+			allTables = loadAllTablesSet();
+			inited = true;
+		} catch (IOException e) {
+			log.error("load hbase tables failed," + e.getMessage(), e);
+		}
 	}
 
 	@Override
 	public boolean handle(List<ConsumerRecord<String, String>> data) throws Exception {
+
+		if (!inited)
+			throw new Exception("hbase tables not loaded.");
 
 		if (data == null || data.isEmpty())
 			return true;
@@ -93,6 +110,11 @@ public class HBaseHandler implements Handler {
 			String pkCols = schema.getString("pk_col");
 			String mapKey = (dbId == null || "".equals(dbId.trim())) ? tblId : dbId + ":" + tblId;
 
+			if (!this.allTables.contains(mapKey)) {
+				log.error("hbase tbl {} not exists, ignore it.", mapKey);
+				return;
+			}
+
 			final ArrayList<String> rowKeys = new ArrayList<>(Arrays.asList(r.key()));
 			if (pkCols != null && !"".equals(pkCols.trim())) {
 				rowKeys.clear();
@@ -121,11 +143,12 @@ public class HBaseHandler implements Handler {
 						put.addColumn(cfBytes, Bytes.toBytes("ts"), Bytes.toBytes(schema.getString("time")));
 						put.addColumn(cfBytes, Bytes.toBytes("offset"), Bytes.toBytes(schema.getString("offset")));
 						put.addColumn(cfBytes, Bytes.toBytes("syncOprType"), Bytes.toBytes(oprType));
-						// put.addColumn(cfBytes, Bytes.toBytes("time"), Bytes.toBytes(schema.getString("time")));
+						// put.addColumn(cfBytes, Bytes.toBytes("time"),
+						// Bytes.toBytes(schema.getString("time")));
 
 						dataJson.entrySet().forEach(entry -> {
 							put.addColumn(cfBytes, Bytes.toBytes(entry.getKey()),
-									Bytes.toBytes(entry.getValue().toString()));
+									Bytes.toBytes(null == entry.getValue() ? "" : entry.getValue().toString()));
 						});
 
 						listPut.add(put);
@@ -220,6 +243,30 @@ public class HBaseHandler implements Handler {
 		log.error("all data finished, used {} ms.", System.currentTimeMillis() - allStart);
 
 		return true;
+	}
+
+	public Set<String> loadAllTablesSet() throws IOException {
+
+		Configuration hbaseConf = HBaseConfiguration.create();
+		hbaseConf.set("hbase.zookeeper.quorum", getZkServers());
+		hbaseConf.set("hbase.zookeeper.property.clientPort", getZkPort());
+		hbaseConf.set("hbase.defaults.for.version.skip", "true");
+		Connection hbaseConn = null;
+		Admin admin = null;
+		Set<String> tableNamesSet = new HashSet<String>();
+		try {
+			hbaseConn = ConnectionFactory.createConnection(hbaseConf);
+			admin = hbaseConn.getAdmin();
+			TableName[] listTableNames = admin.listTableNames();
+			List<TableName> list = Arrays.asList(listTableNames);
+			list.forEach(tableName -> tableNamesSet.add(tableName.getNameAsString()));
+		} finally {
+			if (null != admin)
+				admin.close();
+			if (null != hbaseConn)
+				hbaseConn.close();
+		}
+		return tableNamesSet;
 	}
 
 	@Override

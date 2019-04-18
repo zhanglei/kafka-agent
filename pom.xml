@@ -3,8 +3,8 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.hncy58</groupId>
-	<artifactId>kafka</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>kafka-agent</artifactId>
+	<version>0.0.1-cdh6.1.0</version>
 
 	<name>kafka stream comsumer</name>
 	<organization>
