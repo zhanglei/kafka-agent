@@ -150,7 +150,7 @@ public class KuduHandler implements Handler {
 		for (ConsumerRecord<String, String> r : data) {
 			value = r.value();
 			// for debug
-			log.info("received data -> {}", value);
+			log.debug("received data -> {}", value);
 			
 			if (StringUtils.isEmpty(value)) {
 				log.error("data value is null, ignored, record:{}", r);
@@ -304,7 +304,7 @@ public class KuduHandler implements Handler {
 					"Kudu表不存在或者未加载成功，数据被忽略，tableList:" + unExistTable);
 		}
 
-		log.error("parse kafka data finished size:{}, used {} ms.", tmpCnt, System.currentTimeMillis() - start);
+		log.warn("parse kafka data finished size:{}, used {} ms.", tmpCnt, System.currentTimeMillis() - start);
 
 		
 		doCommit(insertMap, upsertMap, deleteMap);

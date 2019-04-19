@@ -42,7 +42,7 @@ public class ConsumerToHBaseApp {
 
 	private static int fetchMiliseconds = Integer
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "fetchMiliseconds", "1000"));
-	private static int sleepSeconds = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "sleepSeconds", "5"));
+	private static int sleepMiliseconds = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "sleepMiliseconds", "200"));
 	private static int minBatchSize = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "minBatchSize", "5000"));
 	private static int minSleepCnt = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "minSleepCnt", "20"));
 	private static int noDataMaxSleepCnt = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "noDataMaxSleepCnt", "5"));
@@ -169,7 +169,7 @@ public class ConsumerToHBaseApp {
 						if (cnt > 0) {
 							log.info("current polled " + cnt + " records.");
 							TOTAL_MSG_CNT += cnt;
-							log.info("total polled " + TOTAL_MSG_CNT + " records.");
+							log.warn("total polled " + TOTAL_MSG_CNT + " records.");
 							for (ConsumerRecord<String, String> record : records) {
 								buffer.add(record);
 							}
@@ -181,18 +181,18 @@ public class ConsumerToHBaseApp {
 								buffer.clear();
 //								Thread.sleep(500); //
 							} else {
-								log.info("current buffer remains " + buffer.size() + " records.");
+								log.warn("current buffer remains " + buffer.size() + " records.");
 								sleepdCnt += 1;
 							}
 						} else {
-							log.info("no data to poll, sleep " + sleepSeconds + " s. buff size:" + buffer.size());
+							log.warn("no data to poll, sleep " + sleepMiliseconds + " ms. buff size:" + buffer.size());
 							if ((noDataSleepdCnt >= noDataMaxSleepCnt && !buffer.isEmpty())) {
 								sleepdCnt = 0;
 								noDataSleepdCnt = 0;
 								doHandle(buffer);
 								buffer.clear();
 							} else {
-								Thread.sleep(sleepSeconds * 1000);
+								Thread.sleep(sleepMiliseconds);
 								noDataSleepdCnt += 1;
 							}
 						}
@@ -283,7 +283,7 @@ public class ConsumerToHBaseApp {
 			}
 
 			if (args.length > 7) {
-				sleepSeconds = Integer.parseInt(args[7].trim());
+				sleepMiliseconds = Integer.parseInt(args[7].trim());
 			}
 			
 			if (args.length > 8) {

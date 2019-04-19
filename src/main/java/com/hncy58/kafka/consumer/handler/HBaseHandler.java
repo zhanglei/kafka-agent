@@ -111,7 +111,7 @@ public class HBaseHandler implements Handler {
 			String mapKey = (dbId == null || "".equals(dbId.trim())) ? tblId : dbId + ":" + tblId;
 
 			if (!this.allTables.contains(mapKey)) {
-				log.error("hbase tbl {} not exists, ignore it.", mapKey);
+				log.debug("hbase tbl {} not exists, ignore it.", mapKey);
 				return;
 			}
 
@@ -210,13 +210,15 @@ public class HBaseHandler implements Handler {
 				Table table = null;
 				try {
 					table = hbaseConn.getTable(TableName.valueOf(entry.getKey()));
-					table.put(entry.getValue());
+					for(Put put : entry.getValue()) {
+						table.put(put);
+					}
 				} finally {
 					if (table != null) {
 						table.close();
 					}
 				}
-				log.error("commit upsert size {}, used {} ms.", entry.getValue().size(),
+				log.error("commit upsert {} size {}, used {} ms.", entry.getKey(), entry.getValue().size(),
 						System.currentTimeMillis() - start);
 			}
 
@@ -226,13 +228,15 @@ public class HBaseHandler implements Handler {
 				int size = entry.getValue().size();
 				try {
 					table = hbaseConn.getTable(TableName.valueOf(entry.getKey()));
-					table.delete(entry.getValue());
+					for(Delete delete : entry.getValue()) {
+						table.delete(delete);
+					}
 				} finally {
 					if (table != null) {
 						table.close();
 					}
 				}
-				log.error("commit delete size {}, used {} ms.", size, System.currentTimeMillis() - start);
+				log.error("commit delete {} size {}, used {} ms.", entry.getKey(), size, System.currentTimeMillis() - start);
 			}
 		} finally {
 			if (hbaseConn != null && !hbaseConn.isClosed()) {

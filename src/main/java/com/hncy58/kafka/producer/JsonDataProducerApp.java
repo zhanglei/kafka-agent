@@ -105,7 +105,7 @@ public class JsonDataProducerApp {
 				for (int k = 0; k < SEND_BATCH_SIZE; k++) {
 					String key = Long.toString(cur_time - (SEND_BATCH_CNT * SEND_BATCH_SIZE + k));
 
-					key = getHashPrefix(key, 12, 3) + key;
+//					key = getHashPrefix(key, 12, 3) + key;
 
 					// System.out.println(key);
 
