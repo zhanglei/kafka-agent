@@ -83,7 +83,10 @@ public class KuduSpecialHandler implements Handler {
 		this.kuduMaster = kuduMaster;
 		this.localFileNamePrefix = localFileNamePrefix;
 		this.kuduTablePrefix = tblPrefix;
-		this.kuduSpecialTbls.addAll(Arrays.asList(kuduSpecialTbls.split(" *, *")));
+
+		if (null != kuduSpecialTbls && !"".equals(kuduSpecialTbls.trim())) {
+			this.kuduSpecialTbls.addAll(Arrays.asList(kuduSpecialTbls.split(" *, *")));
+		}
 
 		init();
 	}

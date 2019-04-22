@@ -25,7 +25,7 @@ public class RiskInfAddrExtractor implements Extractor<JSONObject> {
 	
 	private static final Logger LOG = LoggerFactory.getLogger(RiskInfAddrExtractor.class);
 
-	private static final Set<String> EXTRACT_COLS = new HashSet<String>(Arrays.asList("LBS_ADDRESS", "lbs_latidude"));
+	private static final Set<String> EXTRACT_COLS = new HashSet<String>(Arrays.asList("LBS_ADDRESS", "lbs_latitude"));
 	private static final String ADDR_SPLIT_PATTERN = " *- *";
 	private static final double EARTH_RADIUS = Ellipsoid.Sphere.getSemiMajorAxis();
 
@@ -51,22 +51,22 @@ public class RiskInfAddrExtractor implements Extractor<JSONObject> {
 				}
 
 				break;
-			case "lbs_latidude": // 计算进件地址
-				if (null == src.get("lbs_latidude") || null == src.get("lbs_longitude")
-						|| null == src.get("salesman_latidude") || null == src.get("salesman_longitude")
-						|| "".equals(src.getString("lbs_latidude").trim())
+			case "lbs_latitude": // 计算进件地址
+				if (null == src.get("lbs_latitude") || null == src.get("lbs_longitude")
+						|| null == src.get("salesman_latitude") || null == src.get("salesman_longitude")
+						|| "".equals(src.getString("lbs_latitude").trim())
 						|| "".equals(src.getString("lbs_longitude").trim())
-						|| "".equals(src.getString("salesman_latidude").trim())
+						|| "".equals(src.getString("salesman_latitude").trim())
 						|| "".equals(src.getString("salesman_longitude").trim()))
 					break;
 
-				double lbs_latidude = src.getDoubleValue("lbs_latidude");
+				double lbs_latitude = src.getDoubleValue("lbs_latitude");
 				double lbs_longitude = src.getDoubleValue("lbs_longitude");
-				double salesman_latidude = src.getDoubleValue("salesman_latidude");
+				double salesman_latitude = src.getDoubleValue("salesman_latitude");
 				double salesman_longitude = src.getDoubleValue("salesman_longitude");
 
 				double cust_introducer_distance = GEODistanceCaculator.distanceOfTwoGEOPoints(EARTH_RADIUS,
-						lbs_latidude, lbs_longitude, salesman_latidude, salesman_longitude);
+						lbs_latitude, lbs_longitude, salesman_latitude, salesman_longitude);
 
 				src.put("cust_introducer_distance", cust_introducer_distance);
 
@@ -87,12 +87,12 @@ public class RiskInfAddrExtractor implements Extractor<JSONObject> {
 
 		JSONObject src = new JSONObject();
 		src.put("LBS_ADDRESS", "湖南省-长沙市-开福区-芙蓉中路一段433号");
-		src.put("lbs_latidude", "112.986091");
+		src.put("lbs_latitude", "112.986091");
 		src.put("lbs_longitude", "28.207006");
-		src.put("salesman_latidude", "112.986091");
+		src.put("salesman_latitude", "112.986091");
 		src.put("salesman_longitude", "28.207006");
 
-		System.out.println(src.getDoubleValue("lbs_latidude"));
+		System.out.println(src.getDoubleValue("lbs_latitude"));
 
 		System.out.println(extractor.extract(src));
 

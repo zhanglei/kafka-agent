@@ -18,7 +18,7 @@ public class Extractors {
 	
 	static {
 		// 风控表客户进件GEO坐标特殊抽取器
-		extractors.put("inf_address", new RiskInfAddrExtractor());
+		extractors.put("impala::kudu_ods_riskcontrol.inf_address", new RiskInfAddrExtractor());
 	}
 	
 	public static final Extractor get(String tableName) {

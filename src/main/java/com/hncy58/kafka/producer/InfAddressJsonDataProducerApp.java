@@ -24,8 +24,8 @@ import com.alibaba.fastjson.JSONObject;
 
 public class InfAddressJsonDataProducerApp {
 
-	private static int SEND_BATCH_SIZE = 5000;
-	private static int SEND_BATCH_CNT = 60;
+	private static int SEND_BATCH_SIZE = 5;
+	private static int SEND_BATCH_CNT = 2;
 	private static int SEND_BATCH_INTERVAL = 1;
 
 	public static final String[] ALPHA_ARR = new String[] { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b",
@@ -37,9 +37,11 @@ public class InfAddressJsonDataProducerApp {
 	// "ccs_acct", "ccs_order"};
 	public static final String[] TBL_ID_ARR = new String[] { "inf_address" };
 	public static final String[] OPR_TYPE_ARR = new String[] { "i", "u", "d" };
+	public static final String[] COUNTY_ARR = new String[] { "岳麓区", "开福区", "天心区", "芙蓉区", "雨花区", "望城区", "长沙县", "星沙县" };
 
 	public static String TOPIC_NAME = "test_sync_riskcontrol_0";
-	public static String KAFKA_SERVERS = "test-9-238:9092";
+	public static String KAFKA_SERVERS = "node01:9092";
+	// public static String KAFKA_SERVERS = "test-9-238:9092";
 	// public static String KAFKA_SERVERS = "192.168.144.128:9092";
 	// public static String KAFKA_SERVERS =
 	// "162.16.6.180:9092,162.16.6.181:9092,162.16.6.182:9092";
@@ -122,13 +124,13 @@ public class InfAddressJsonDataProducerApp {
 					valueMap.put("CREATE_DATE", new Date());
 					valueMap.put("CUST_NAME", "name" + random.nextInt(100000));
 					valueMap.put("EVENT_CODE", new Date());
-					valueMap.put("LBS_ADDRESS", new Date());
-					valueMap.put("PRODUCT_CODE", new Date());
-					valueMap.put("province_city_addr", new Date());
-					valueMap.put("BUSI_SEQ", new Date());
+					valueMap.put("LBS_ADDRESS", "湖南省-长沙市-" + COUNTY_ARR[random.nextInt(COUNTY_ARR.length)] + "-" + new Date());
+					valueMap.put("PRODUCT_CODE", "P1109");
+					valueMap.put("province_city_addr", "湖南省-长沙市-" + COUNTY_ARR[random.nextInt(COUNTY_ARR.length)] + "-" + new Date());
+					valueMap.put("BUSI_SEQ", key);
 					valueMap.put("lbs_longitude", random.nextInt(180) + random.nextFloat());
 					valueMap.put("lbs_latitude", random.nextInt(90) + random.nextFloat());
-					valueMap.put("salesman_qr_code_addr", new Date());
+					valueMap.put("salesman_qr_code_addr", "湖南省-长沙市-" + COUNTY_ARR[random.nextInt(COUNTY_ARR.length)] + "-" + new Date());
 					valueMap.put("salesman_longitude", random.nextInt(180) + random.nextFloat());
 					valueMap.put("salesman_latitude", random.nextInt(90) + random.nextFloat());
 

@@ -151,17 +151,6 @@
 			</snapshots>
 		</repository>
 		<repository>
-			<id>cdh.snapshots.repo</id>
-			<url>https://repository.cloudera.com/artifactory/libs-snapshot-local</url>
-			<name>Cloudera Snapshots Repository</name>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-		<repository>
 			<id>central-repos</id>
 			<name>Central Repository</name>
 			<url>http://central.maven.org/maven2/</url>
@@ -176,14 +165,16 @@
 			<name>aliyun Releases</name>
 			<url>http://maven.aliyun.com/nexus/content/groups/public/</url>
 		</repository>
-		<repository>
-			<id>cloudbees netty release</id>
-			<url>https://maven.java.net/content/repositories/releases/</url>
-		</repository>
-		<repository>
-			<id>apache release</id>
-			<url>https://repository.apache.org/content/repositories/releases/</url>
-		</repository>
+		
+		
+<!-- 		<repository> -->
+<!-- 			<id>cloudbees netty release</id> -->
+<!-- 			<url>https://maven.java.net/content/repositories/releases/</url> -->
+<!-- 		</repository> -->
+<!-- 		<repository> -->
+<!-- 			<id>apache release</id> -->
+<!-- 			<url>https://repository.apache.org/content/repositories/releases/</url> -->
+<!-- 		</repository> -->
 		<!-- <repository> -->
 		<!-- <id>cloudbees netty snapshot</id> -->
 		<!-- <url>http://repository-netty.forge.cloudbees.com/snapshot/</url> -->
