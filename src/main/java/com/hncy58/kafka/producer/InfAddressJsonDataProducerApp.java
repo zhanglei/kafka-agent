@@ -32,19 +32,13 @@ public class InfAddressJsonDataProducerApp {
 			"c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w",
 			"x", "y", "z" };
 
-	public static final String[] DB_ID_ARR = new String[] { "test" };
+	public static final String[] DB_ID_ARR = new String[] { "riskcontrol" };
 	// public static final String[] TBL_ID_ARR = new String[] { "ccs_customer",
 	// "ccs_acct", "ccs_order"};
-	public static final String[] TBL_ID_ARR = new String[] { 
-			"ccs_order_1", "ccs_order_2", "ccs_order_3", "ccs_order_4", "ccs_order_5", "ccs_order_6", "ccs_order_7", "ccs_order_8", "ccs_order_9", "ccs_order_10" 
-			,"ccs_order_11", "ccs_order_12", "ccs_order_13", "ccs_order_14", "ccs_order_15", "ccs_order_16", "ccs_order_17", "ccs_order_18", "ccs_order_19", "ccs_order_20" 
-			,"ccs_order_21", "ccs_order_22", "ccs_order_23", "ccs_order_24", "ccs_order_25", "ccs_order_26", "ccs_order_27", "ccs_order_28", "ccs_order_29", "ccs_order_30" 
-			,"ccs_order_31", "ccs_order_32", "ccs_order_33", "ccs_order_34", "ccs_order_35", "ccs_order_36", "ccs_order_37", "ccs_order_38", "ccs_order_39", "ccs_order_40" 
-			,"ccs_order_41", "ccs_order_42", "ccs_order_43", "ccs_order_44", "ccs_order_45", "ccs_order_46", "ccs_order_47", "ccs_order_48", "ccs_order_49", "ccs_order_50" 
-			};
+	public static final String[] TBL_ID_ARR = new String[] { "inf_address" };
 	public static final String[] OPR_TYPE_ARR = new String[] { "i", "u", "d" };
 
-	public static String TOPIC_NAME = "sit_sync_prodccsdb_0";
+	public static String TOPIC_NAME = "test_sync_riskcontrol_0";
 	public static String KAFKA_SERVERS = "test-9-238:9092";
 	// public static String KAFKA_SERVERS = "192.168.144.128:9092";
 	// public static String KAFKA_SERVERS =
@@ -58,8 +52,8 @@ public class InfAddressJsonDataProducerApp {
 
 		System.out.println("Uage:\n\t" + InfAddressJsonDataProducerApp.class.getName()
 				+ " KAFKA_SERVERS TOPIC_NAME SEND_BATCH_SIZE SEND_BATCH_CNT SEND_BATCH_INTERVAL USE_TRANSACTION");
-		System.out.println(
-				"eg:\n\t" + InfAddressJsonDataProducerApp.class.getName() + " localhost:9092 test_topic_1 10000 100 1 true");
+		System.out.println("eg:\n\t" + InfAddressJsonDataProducerApp.class.getName()
+				+ " localhost:9092 test_topic_1 10000 100 1 true");
 
 		if (args.length > 0) {
 			KAFKA_SERVERS = args[0].trim();
@@ -105,8 +99,7 @@ public class InfAddressJsonDataProducerApp {
 				for (int k = 0; k < SEND_BATCH_SIZE; k++) {
 					String key = Long.toString(cur_time - (SEND_BATCH_CNT * SEND_BATCH_SIZE + k));
 
-//					key = getHashPrefix(key, 12, 3) + key;
-
+					// key = getHashPrefix(key, 12, 3) + key;
 					// System.out.println(key);
 
 					JSONObject json = new JSONObject(true);
@@ -115,43 +108,30 @@ public class InfAddressJsonDataProducerApp {
 					schema.put("offset", key);
 					schema.put("time", System.currentTimeMillis());
 					schema.put("agt_svr_nm", "canal_01");
-					// schema.put("db_id", DB_ID_ARR[random.nextInt(DB_ID_ARR.length)]);
+					// schema.put("db_id", "");
 					// schema.put("tbl_id", "ccs_order_1");
 					// schema.put("opr_type", "i");
-					schema.put("db_id", "");
+					schema.put("db_id", DB_ID_ARR[random.nextInt(DB_ID_ARR.length)]);
 					schema.put("tbl_id", TBL_ID_ARR[random.nextInt(TBL_ID_ARR.length)]);
 					schema.put("opr_type", OPR_TYPE_ARR[random.nextInt(OPR_TYPE_ARR.length)]);
-					schema.put("pk_col", "ORDER_ID");
+					schema.put("pk_col", "id");
 
 					Map<String, Object> valueMap = new HashMap<>();
-					valueMap.put("ORDER_ID", key);
-					valueMap.put("ORDER_TIME", new Date());
-					valueMap.put("ORBER_FAIL_TIME", new Date());
-					valueMap.put("OPT_DATETIME", new Date());
-					valueMap.put("CREATE_TIME", new Date());
-					valueMap.put("LST_UPD_TIME", new Date());
-					valueMap.put("ORG", random.nextInt(100000));
-					valueMap.put("name", "name" + random.nextInt(100000));
-					valueMap.put("cert_id", "43052119890625" + random.nextInt(10000));
-					
-					for (int i = 0; i < 300; i++) {
-						valueMap.put("cert_id_" + i, "43052119890625" + random.nextInt(10000));
-					}
-					
-					valueMap.put("gender", random.nextInt(2));
-					valueMap.put("year_income", random.nextFloat() * 200000);
-					valueMap.put("birth", System.currentTimeMillis());
-					valueMap.put("remark",
-							"2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0"
-									+ "2019-04-18 10:43:24,893 INFO  com.hncy58.kafka.consumer.ConsumerToHBaseApp.doRun(ConsumerToHBaseApp.java:184) - no data to poll, sleep 5 s. buff size:0");
+					valueMap.put("id", key);
+					valueMap.put("CERT_ID", "43052119890625" + random.nextInt(10000));
+					valueMap.put("CREATE_DATE", new Date());
+					valueMap.put("CUST_NAME", "name" + random.nextInt(100000));
+					valueMap.put("EVENT_CODE", new Date());
+					valueMap.put("LBS_ADDRESS", new Date());
+					valueMap.put("PRODUCT_CODE", new Date());
+					valueMap.put("province_city_addr", new Date());
+					valueMap.put("BUSI_SEQ", new Date());
+					valueMap.put("lbs_longitude", random.nextInt(180) + random.nextFloat());
+					valueMap.put("lbs_latitude", random.nextInt(90) + random.nextFloat());
+					valueMap.put("salesman_qr_code_addr", new Date());
+					valueMap.put("salesman_longitude", random.nextInt(180) + random.nextFloat());
+					valueMap.put("salesman_latitude", random.nextInt(90) + random.nextFloat());
+
 					data.add(valueMap);
 
 					json.put("schema", schema);
@@ -159,14 +139,6 @@ public class InfAddressJsonDataProducerApp {
 					String value = json.toJSONString();
 					Future<RecordMetadata> future = producer
 							.send(new ProducerRecord<String, String>(TOPIC_NAME, key, value));
-					// try {
-					// System.out.println(future.get().offset() + "," +
-					// future.get().partition());
-					// } catch (InterruptedException e) {
-					// e.printStackTrace();
-					// } catch (ExecutionException e) {
-					// e.printStackTrace();
-					// }
 				}
 				if (USE_TRANSACTION) {
 					producer.commitTransaction();

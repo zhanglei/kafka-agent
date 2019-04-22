@@ -75,7 +75,7 @@ public class KafkaToKuduSpecialExtractApp {
 			"unHadledData");
 	private static String kuduTablePrefix = PropsUtil.getWithDefault(PROP_PREFIX, "kuduTablePrefix", "impala::kudu_");
 	private static String kuduMaster = PropsUtil.getWithDefault(PROP_PREFIX, "kuduMaster", "localhost:7051");
-	private static String kudutSpecialTbls = PropsUtil.getWithDefault(PROP_PREFIX, "kudutSpecialTbls", "");
+	private static String kuduSpecialTbls = PropsUtil.getWithDefault(PROP_PREFIX, "kuduSpecialTbls", "");
 
 	private boolean run = false;
 	private boolean shutdown_singal = false;
@@ -352,7 +352,7 @@ public class KafkaToKuduSpecialExtractApp {
 			consumer.subscribe(subscribeToipcs);
 
 			setHandler(new KuduSpecialHandler(agentSvrName, agentSvrGroup, agentSvrType, kuduMaster, localFileNamePrefix,
-					kuduTablePrefix, kudutSpecialTbls));
+					kuduTablePrefix, kuduSpecialTbls));
 
 			heartRunnable = new HeartRunnable(agentSvrName, agentSvrGroup, agentSvrType, agentSourceType, agentDestType,
 					svrHeartBeatSleepInterval);

@@ -72,10 +72,10 @@ public class KuduSpecialHandler implements Handler {
 	private static KuduClient client;
 
 	private Map<String, Schema> kuduTableSchemas = new HashMap<>();
-	private Set<String> kudutSpecialTbls = new HashSet<String>();
+	private Set<String> kuduSpecialTbls = new HashSet<String>();
 
 	public KuduSpecialHandler(String agentSvrName, String agentSvrGroup, int agentSvrType, String kuduMaster,
-			String localFileNamePrefix, String tblPrefix, String kudutSpecialTbls) throws Exception {
+			String localFileNamePrefix, String tblPrefix, String kuduSpecialTbls) throws Exception {
 		super();
 		this.agentSvrName = agentSvrName;
 		this.agentSvrGroup = agentSvrGroup;
@@ -83,7 +83,7 @@ public class KuduSpecialHandler implements Handler {
 		this.kuduMaster = kuduMaster;
 		this.localFileNamePrefix = localFileNamePrefix;
 		this.kuduTablePrefix = tblPrefix;
-		this.kudutSpecialTbls.addAll(Arrays.asList(kudutSpecialTbls.split(" *, *")));
+		this.kuduSpecialTbls.addAll(Arrays.asList(kuduSpecialTbls.split(" *, *")));
 
 		init();
 	}
@@ -117,24 +117,8 @@ public class KuduSpecialHandler implements Handler {
 			log.error("start to load {}'s schema.", tableName);
 			Schema kuduSchema = client.openTable(tableName).getSchema();
 
-			// 如果没有配置特殊处理表，则加载所有表
-			if (kudutSpecialTbls.isEmpty()) {
-				kuduTableSchemas.put(tableName, kuduSchema);
-				log.error("load {}'s schema finished. kuduSchema -> {}", tableName, kuduSchema);
-				continue;
-			}
-
-			if (!kudutSpecialTbls.contains(tableName)) {
-				log.info("table {} not nead to do special extract.", tableName);
-				continue;
-			}
-
 			kuduTableSchemas.put(tableName, kuduSchema);
 			log.error("load {}'s schema finished. kuduSchema -> {}", tableName, kuduSchema);
-
-			if (Extractors.contains(tableName)) {
-
-			}
 		}
 	}
 
@@ -277,8 +261,11 @@ public class KuduSpecialHandler implements Handler {
 				}
 
 				// 通过特殊数据抽取器进行数据加工（如果需要）
-				if (Extractors.contains(tblId))
+				// 特殊表属性为空或者特殊表包含此表，且已经初始化对应抽取器，且操作类型不为删除操作
+				if ((kuduSpecialTbls.isEmpty() || kuduSpecialTbls.contains(tblId)) && Extractors.contains(tblId)
+						&& delStatus < 2) {
 					Extractors.get(tblId).extract(dataJson);
+				}
 
 				// 填充各个数据列
 				for (Entry<String, Object> entry : dataJson.entrySet()) {
@@ -625,12 +612,8 @@ public class KuduSpecialHandler implements Handler {
 		return client;
 	}
 
-	public Set<String> getKudutSpecialTbls() {
-		return kudutSpecialTbls;
-	}
-
-	public void setKudutSpecialTbls(Set<String> kudutSpecialTbls) {
-		this.kudutSpecialTbls = kudutSpecialTbls;
+	public Set<String> getKuduSpecialTbls() {
+		return kuduSpecialTbls;
 	}
 
 }
