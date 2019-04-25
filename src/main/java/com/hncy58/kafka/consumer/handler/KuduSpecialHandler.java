@@ -266,7 +266,7 @@ public class KuduSpecialHandler implements Handler {
 				// 通过特殊数据抽取器进行数据加工（如果需要）
 				// 特殊表属性为空或者特殊表包含此表，且已经初始化对应抽取器，且操作类型不为删除操作
 				if ((kuduSpecialTbls.isEmpty() || kuduSpecialTbls.contains(tblId)) && Extractors.contains(tblId)
-						&& delStatus < 2) {
+						&& (delStatus == 0 || delStatus == 2)) {
 					Extractors.get(tblId).extract(dataJson);
 				}
 
