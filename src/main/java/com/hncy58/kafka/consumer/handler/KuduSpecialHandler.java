@@ -130,6 +130,9 @@ public class KuduSpecialHandler implements Handler {
 
 		if (data == null || data.isEmpty())
 			return true;
+		
+		// 记录处理kafka第一条的的kafka入队列时间
+		log.error("current handle kafaka data offset time:{}", data.get(0).timestamp());
 
 		Map<String, KuduTable> kudutables = new HashMap<>();
 		Map<String, List<Operation>> upsertMap = new HashMap<>();
@@ -174,7 +177,7 @@ public class KuduSpecialHandler implements Handler {
 				log.error("json value is null or empty, not contain schema,not contain data, ignored, record:{}", r);
 				continue;
 			}
-
+			
 			schema = json.getJSONObject("schema");
 			jsonDataArr = json.getJSONArray("data");
 			if (jsonDataArr.isEmpty()) {
@@ -189,9 +192,8 @@ public class KuduSpecialHandler implements Handler {
 
 			if (!kuduTableSchemas.containsKey(tblId)) {
 				unExistTable.add(tblId);
-				// log.debug("Kudu表:{}对应Schema不存在或者未加载成功，数据被忽略 ,data:\n{}",
-				// tblId, value);
-				log.warn("Kudu表:{}对应Schema不存在或者未加载成功，数据被忽略", tblId);
+				// log.debug("Kudu表:{}对应Schema不存在或者未加载成功，数据被忽略 ,data:\n{}", tblId, value);
+				log.info("Kudu表:{}对应Schema不存在或者未加载成功，数据被忽略", tblId);
 				continue;
 			}
 

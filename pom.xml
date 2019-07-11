@@ -214,13 +214,23 @@
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.1</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
 					<archive>
 						<manifest>
 							<addClasspath>true</addClasspath>
 							<classpathPrefix>lib/</classpathPrefix>
-							<mainClass>com.hncy58.canal.CanalToKafkaApp</mainClass>
+							<mainClass>com.hncy58.kafka.consumer.KafkaToKuduSpecialExtractApp</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
@@ -256,7 +266,7 @@
 							<encoding>UTF-8</encoding>
 							<!-- 覆盖原有文件 -->
 							<overwrite>true</overwrite>
-							<!-- <outputDirectory>${project.build.outputDirectory}</outputDirectory> -->
+<!-- 							<outputDirectory>${project.build.outputDirectory}</outputDirectory> -->
 							<outputDirectory>${project.build.directory}</outputDirectory>
 							<resources>
 								<resource>

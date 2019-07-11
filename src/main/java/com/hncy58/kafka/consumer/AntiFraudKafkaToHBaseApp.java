@@ -4,13 +4,10 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -19,30 +16,18 @@ import org.slf4j.LoggerFactory;
 
 import com.hncy58.ds.ServerStatusReportUtil;
 import com.hncy58.heartbeat.HeartRunnable;
+import com.hncy58.kafka.consumer.handler.AntiFraudHBaseHandler;
 import com.hncy58.kafka.consumer.handler.Handler;
-import com.hncy58.kafka.consumer.handler.KuduSpecialHandler;
 import com.hncy58.util.PropsUtil;
-import com.hncy58.util.SendMsgUtil;
 
-/**
- * 读取Kafka数据写入至Kudu表
- * 
- * @author tokings
- * @company hncy58 湖南长银五八
- * @website http://www.hncy58.com
- * @version 1.0
- * @date 2018年11月6日 下午5:50:27
- *
- */
-public class KafkaToKuduSpecialExtractApp {
+public class AntiFraudKafkaToHBaseApp {
 
-	private static final Logger log = LoggerFactory.getLogger(KafkaToKuduSpecialExtractApp.class);
+	private static final Logger log = LoggerFactory.getLogger(AntiFraudKafkaToHBaseApp.class);
 
-	public static final String PROP_PREFIX = "kafka-to-kudu-spe";
+	private static final String PROP_PREFIX = "kafka-to-hbase";
 
-	private static String agentSvrName = PropsUtil.getWithDefault(PROP_PREFIX, "agentSvrName", "KafkaToKuduSpecial");
-	private static String agentSvrGroup = PropsUtil.getWithDefault(PROP_PREFIX, "agentSvrGroup",
-			"KafkaToKuduSpecialGroup");
+	private static String agentSvrName = PropsUtil.getWithDefault(PROP_PREFIX, "agentSvrName", "KafkaToHBase");
+	private static String agentSvrGroup = PropsUtil.getWithDefault(PROP_PREFIX, "agentSvrGroup", "KafkaToHBaseGroup");
 	private static int agentSvrType = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "agentSvrType", "2"));
 	private static int agentSourceType = Integer
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "agentSourceType", "2"));
@@ -51,17 +36,16 @@ public class KafkaToKuduSpecialExtractApp {
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "svrHeartBeatSleepInterval", "10"));
 	private static int maxSvrStatusUpdateFailCnt = Integer
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "maxSvrStatusUpdateFailCnt", "2"));
+
 	private static int svrRegFailSleepInterval = Integer
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "svrRegFailSleepInterval", "5"));
 
 	private static int fetchMiliseconds = Integer
-			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "fetchMiliseconds", "100"));
-	private static int sleepMiliseconds = Integer
-			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "sleepMiliseconds", "200"));
+			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "fetchMiliseconds", "1000"));
+	private static int sleepMiliseconds = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "sleepMiliseconds", "200"));
 	private static int minBatchSize = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "minBatchSize", "5000"));
 	private static int minSleepCnt = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "minSleepCnt", "20"));
-	private static int noDataMaxSleepCnt = Integer
-			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "noDataMaxSleepCnt", "5"));
+	private static int noDataMaxSleepCnt = Integer.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "noDataMaxSleepCnt", "5"));
 	private static int maxOffsetCommitRetryCnt = Integer
 			.parseInt(PropsUtil.getWithDefault(PROP_PREFIX, "maxOffsetCommitRetryCnt", "3"));
 	private static int offsetCommitRetryInterval = Integer
@@ -71,18 +55,19 @@ public class KafkaToKuduSpecialExtractApp {
 	private static int ERR_HANDLED_CNT = 0;
 	private static Long TOTAL_MSG_CNT = 0L;
 
-	private static String kafkaOffset = PropsUtil.getWithDefault(PROP_PREFIX, "kafkaOffset", "latest");
-	private static String kafkaServers = PropsUtil.getWithDefault(PROP_PREFIX, "kafkaServers", "localhost:9092");
-	private static String kafkaGroupId = PropsUtil.getWithDefault(PROP_PREFIX, "kafkaGroupId",
-			"ConsumerToKuduSpecialApp");
+	private static String kafkaServers = PropsUtil.getWithDefault(PROP_PREFIX, "kafkaServers",
+			"162.16.6.180:9092,162.16.6.181:9092,162.16.6.182:9092");
+	private static String kafkaGroupId = PropsUtil.getWithDefault(PROP_PREFIX, "kafkaGroupId", "ConsumerToHBaseApp");
 	private static List<String> subscribeToipcs = Arrays
 			.asList(PropsUtil.getWithDefault(PROP_PREFIX, "subscribeToipcs", "").split(" *, *"));
 
 	private static String localFileNamePrefix = PropsUtil.getWithDefault(PROP_PREFIX, "localFileNamePrefix",
 			"unHadledData");
-	private static String kuduTablePrefix = PropsUtil.getWithDefault(PROP_PREFIX, "kuduTablePrefix", "impala::kudu_");
-	private static String kuduMaster = PropsUtil.getWithDefault(PROP_PREFIX, "kuduMaster", "localhost:7051");
-	private static String kuduSpecialTbls = PropsUtil.getWithDefault(PROP_PREFIX, "kuduSpecialTbls", "");
+	private static String hbaseColumnFamilyName = PropsUtil.getWithDefault(PROP_PREFIX, "hbaseColumnFamilyName",
+			"info");
+	private static String zkServers = PropsUtil.getWithDefault(PROP_PREFIX, "zkServers",
+			"162.16.6.180,162.16.6.181,162.16.6.182");
+	private static String zkPort = PropsUtil.getWithDefault(PROP_PREFIX, "zkPort", "2181");
 
 	private boolean run = false;
 	private boolean shutdown_singal = false;
@@ -96,30 +81,18 @@ public class KafkaToKuduSpecialExtractApp {
 
 	public static void main(String[] args) {
 
-		KafkaToKuduSpecialExtractApp app = new KafkaToKuduSpecialExtractApp();
+		AntiFraudKafkaToHBaseApp app = new AntiFraudKafkaToHBaseApp();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 			@Override
 			public void run() {
 				log.warn("开始运行进程退出钩子函数。");
-				int maxCnt = 60;
-				int cnt = 0;
 				while (!app.getDownSignal()) {
 					try {
-						if (cnt >= maxCnt) {
-							app.stopThreadAndSendErrState();
-							app.setShutdown(true);
-							app.setDownSignal(true);
-							log.error("监测到服务中断信号，退出服务！");
-							Runtime.getRuntime().exit(0);
-							System.exit(0);
-							break;
-						}
+						log.error("监测到中断进程信号，设置服务为下线！");
 						app.setShutdown(true);
-						log.error("监测到中断进程信号，设置服务为下线！" + app.isShutdown());
 						Thread.sleep(2 * 1000);
-						cnt++;
-					} catch (Exception e) {
+					} catch (InterruptedException e) {
 						log.error(e.getMessage(), e);
 					}
 				}
@@ -127,58 +100,33 @@ public class KafkaToKuduSpecialExtractApp {
 		}, "ShutdownHookThread"));
 
 		app.init(args);
+
 		// 开始运行
 		app.doRun(args);
 
 		log.error("初始化服务失败，请检查相关配置是否正确！");
 		app.setDownSignal(true);
-		app.stopThreadAndSendErrState();
+		try {
+			// 停止状态上报线程
+			heartRunnable.setRun(false);
+			heartRunnable.setSvrStatus(0);
+			heartThread.interrupt();
+			boolean ret = ServerStatusReportUtil.reportSvrStatus(agentSvrName, agentSvrGroup, agentSvrType, 0,
+					"监测到服务中断信号，退出服务！");
+			log.info("设置服务状态为下线：" + ret);
+			ret = ServerStatusReportUtil.reportAlarm(agentSvrName, agentSvrGroup, agentSvrType, 1, 4, "设置服务状态为下线：" + ret
+					+ "，shutdown_singal：" + app.getDownSignal() + "，ERR_HANDLED_CNT：" + ERR_HANDLED_CNT);
+			log.info("上报告警结果：" + ret);
+		} catch (SQLException e) {
+			log.error(e.getMessage(), e);
+		}
 		// Runtime.getRuntime().exit(2);
 		// System.exit(2);
 	}
 
-	private void stopThreadAndSendErrState() {
-		try {
-			// 停止状态上报线程
-			if (heartRunnable != null) {
-				heartRunnable.setRun(false);
-				heartRunnable.setSvrStatus(0);
-				heartThread.interrupt();
-			}
-			boolean ret = ServerStatusReportUtil.reportSvrStatus(agentSvrName, agentSvrGroup, agentSvrType, 0,
-					"监测到服务中断信号，退出服务！");
-			log.info("设置服务状态为下线：" + ret);
-			ret = ServerStatusReportUtil.reportAlarm(agentSvrName, agentSvrGroup, agentSvrType, 1, 4,
-					"设置服务状态为下线：" + ret + "，shutdown_singal：" + getDownSignal() + "，ERR_HANDLED_CNT：" + ERR_HANDLED_CNT);
-			log.info("上报告警结果：" + ret);
-
-			String msg = "服务中断退出：" + System.currentTimeMillis() + "，" + agentSvrName + "，" + agentSvrGroup;
-			boolean sendFlag = SendMsgUtil.sendMsg(msg);
-			log.error("服务中断退出，发送通知消息结果：{}， 消息内容：{}", sendFlag, msg);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
-	}
-
-	private void doStop() {
-		run = false;
-		try {
-			stopThreadAndSendErrState();
-			setShutdown(true);
-			setDownSignal(true);
-			log.error("监测到服务中断信号，退出服务！");
-			Runtime.getRuntime().exit(0);
-			System.exit(0);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-			log.error("捕获到异常停止状态，直接退出进程！");
-			System.exit(1);
-		}
-	}
-
 	public void doRun(String[] args) {
 		try {
-			List<ConsumerRecord<String, String>> bufferList = new ArrayList<>();
+			List<ConsumerRecord<String, String>> buffer = new ArrayList<>();
 			int sleepdCnt = 0;
 			int noDataSleepdCnt = 0;
 
@@ -188,45 +136,61 @@ public class KafkaToKuduSpecialExtractApp {
 					if (isShutdown() || ERR_HANDLED_CNT >= maxErrHandledCnt) {
 						run = false;
 						try {
-							if (bufferList != null && !bufferList.isEmpty()) {
-								doHandle(bufferList);
-								bufferList.clear();
+							if (buffer != null && !buffer.isEmpty()) {
+								doHandle(buffer);
+								buffer.clear();
 							}
+							// 停止状态上报线程
+							heartRunnable.setRun(false);
+							heartRunnable.setSvrStatus(0);
+							heartThread.interrupt();
+
+							boolean ret = ServerStatusReportUtil.reportSvrStatus(agentSvrName, agentSvrGroup,
+									agentSvrType, 0, "监测到服务中断信号，退出服务！");
+							log.info("设置服务状态为下线：" + ret);
+							ret = ServerStatusReportUtil.reportAlarm(agentSvrName, agentSvrGroup, agentSvrType, 1, 4,
+									"设置服务状态为下线：" + ret + "，shutdown_singal：" + shutdown_singal + "，ERR_HANDLED_CNT："
+											+ ERR_HANDLED_CNT);
+							log.info("上报告警结果：" + ret);
+
+							setShutdown(true);
+							setDownSignal(true);
+							log.error("监测到服务中断信号，退出服务！");
+							Runtime.getRuntime().exit(0);
+							System.exit(0);
 						} catch (Exception e) {
 							log.error(e.getMessage(), e);
-						} finally {
-							doStop();
+							log.error("捕获到异常停止状态，直接退出进程！");
+							System.exit(1);
 						}
 					} else {
 						ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(fetchMiliseconds));
 						int cnt = records.count();
 						if (cnt > 0) {
-							log.warn("current polled " + cnt + " records.");
+							log.info("current polled " + cnt + " records.");
 							TOTAL_MSG_CNT += cnt;
 							log.warn("total polled " + TOTAL_MSG_CNT + " records.");
 							for (ConsumerRecord<String, String> record : records) {
-								bufferList.add(record);
+								buffer.add(record);
 							}
 
-							if (bufferList.size() >= minBatchSize
-									|| (sleepdCnt >= minSleepCnt && !bufferList.isEmpty())) {
+							if (buffer.size() >= minBatchSize || (sleepdCnt >= minSleepCnt && !buffer.isEmpty())) {
 								sleepdCnt = 0;
 								noDataSleepdCnt = 0;
-								doHandle(bufferList);
-								bufferList.clear();
-								// Thread.sleep(500); //
+								doHandle(buffer);
+								buffer.clear();
+//								Thread.sleep(500); //
 							} else {
-								log.warn("current buffer remains " + bufferList.size() + " records.");
+								log.warn("current buffer remains " + buffer.size() + " records.");
 								sleepdCnt += 1;
 							}
 						} else {
-							log.warn("no data to poll, sleep " + sleepMiliseconds + " ms. buff size:"
-									+ bufferList.size());
-							if ((noDataSleepdCnt >= noDataMaxSleepCnt && !bufferList.isEmpty())) {
+							log.warn("no data to poll, sleep " + sleepMiliseconds + " ms. buff size:" + buffer.size());
+							if ((noDataSleepdCnt >= noDataMaxSleepCnt && !buffer.isEmpty())) {
 								sleepdCnt = 0;
 								noDataSleepdCnt = 0;
-								doHandle(bufferList);
-								bufferList.clear();
+								doHandle(buffer);
+								buffer.clear();
 							} else {
 								Thread.sleep(sleepMiliseconds);
 								noDataSleepdCnt += 1;
@@ -257,22 +221,16 @@ public class KafkaToKuduSpecialExtractApp {
 	private void init(String[] args) {
 
 		try {
-			log.info("usage:" + KafkaToKuduSpecialExtractApp.class.getName()
+			log.info("usage:" + AntiFraudKafkaToHBaseApp.class.getName()
 					+ " kafkaServers kafkaTopicGroupName kafkaToipcs FETCH_MILISECONDS MIN_BATCH_SIZE MIN_SLEEP_CNT SLEEP_SECONDS");
-			log.info("eg:" + KafkaToKuduSpecialExtractApp.class.getName()
+			log.info("eg:" + AntiFraudKafkaToHBaseApp.class.getName()
 					+ " localhost:9092 kafka_hdfs_group_2 test-topic-1 1000 5000 3 5");
 
 			int ret = ServerStatusReportUtil.register(agentSvrName, agentSvrGroup, agentSvrType, agentSourceType,
 					agentDestType, svrHeartBeatSleepInterval, maxSvrStatusUpdateFailCnt);
 
 			while (ret != 1) {
-				// 如果发送了终止进程消息，则停止消费，并且处理掉缓存的消息
-				if (isShutdown() || ERR_HANDLED_CNT >= maxErrHandledCnt) {
-					doStop();
-					break;
-				}
-
-				log.error("注册服务，name:{}, group:{}, svrType:{}, sourceType:{}, destType:{}, 注册结果:{}", agentSvrName,
+				log.error("注册服务失败，name:{}, group:{}, svrType:{}, sourceType:{}, destType:{}, 注册结果:{}", agentSvrName,
 						agentSvrGroup, agentSvrType, agentSourceType, agentDestType, ret);
 				try {
 					Thread.sleep(svrRegFailSleepInterval * 1000);
@@ -309,7 +267,7 @@ public class KafkaToKuduSpecialExtractApp {
 			}
 
 			if (args.length > 3) {
-				kuduMaster = args[3].trim();
+				hbaseColumnFamilyName = args[3].trim();
 			}
 
 			if (args.length > 4) {
@@ -327,12 +285,15 @@ public class KafkaToKuduSpecialExtractApp {
 			if (args.length > 7) {
 				sleepMiliseconds = Integer.parseInt(args[7].trim());
 			}
+			
+			if (args.length > 8) {
+				noDataMaxSleepCnt = Integer.parseInt(args[8].trim());
+			}
 
 			props.put("bootstrap.servers", kafkaServers);
 			props.put("group.id", kafkaGroupId);
 
 			// props.put("auto.commit.interval.ms", "1000");
-			props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, kafkaOffset);
 			props.put("enable.auto.commit", "false");
 			props.put("isolation.level", "read_committed");
 			props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -341,8 +302,7 @@ public class KafkaToKuduSpecialExtractApp {
 			consumer = new KafkaConsumer<>(props);
 			consumer.subscribe(subscribeToipcs);
 
-			setHandler(new KuduSpecialHandler(agentSvrName, agentSvrGroup, agentSvrType, kuduMaster,
-					localFileNamePrefix, kuduTablePrefix, kuduSpecialTbls));
+			setHandler(new AntiFraudHBaseHandler(zkServers, zkPort, hbaseColumnFamilyName, localFileNamePrefix));
 
 			heartRunnable = new HeartRunnable(agentSvrName, agentSvrGroup, agentSvrType, agentSourceType, agentDestType,
 					svrHeartBeatSleepInterval);
@@ -360,11 +320,9 @@ public class KafkaToKuduSpecialExtractApp {
 
 		int offsetCommitRetryCnt = 0;
 		boolean success = false;
-		long start = System.currentTimeMillis();
 		while (!success && offsetCommitRetryCnt < maxOffsetCommitRetryCnt) {
 			try {
 				getHandler().handle(buffer);
-				log.error("handle data used {} ms.", System.currentTimeMillis() - start);
 				success = true;
 			} catch (Exception e) {
 				log.error("处理数据异常，重试次数：" + offsetCommitRetryCnt + "，错误信息：" + e.getMessage(), e);
@@ -377,29 +335,11 @@ public class KafkaToKuduSpecialExtractApp {
 		if (!success)
 			ERR_HANDLED_CNT += 1;
 
-		start = System.currentTimeMillis();
 		boolean cmtSuccess = commitOffsets();
-		log.error("commit offsets used {} ms.", System.currentTimeMillis() - start);
 		// 如果重试N次还是失败且偏移量提交成功，则记录到本地文件，然后发送告警信息到监控服务
 		// 如果重试N次提交偏移量还是失败，则记录到本地文件，然后发送告警信息到监控服务
 		if (!success && cmtSuccess) {
 			success = doSaveToLocalFile(buffer);
-
-			// 发送短信通知
-			if (buffer != null && !buffer.isEmpty()) {
-				long firstTS = buffer.get(0).timestamp();
-				StringBuffer msgBuff = new StringBuffer("kudu落表失败:" + firstTS + "，total：" + buffer.size() + "，topics：");
-				Set<String> topics = new HashSet<>();
-				for (ConsumerRecord<String, String> rec : buffer) {
-					if (!topics.contains(rec.topic())) {
-						topics.add(rec.topic());
-						msgBuff.append(rec.topic()).append(",");
-					}
-				}
-
-				boolean sendFlag = SendMsgUtil.sendMsg(msgBuff.deleteCharAt(msgBuff.length() - 1).toString());
-				log.error("处理消息失败，第一条kafka消息ts:{}，发送通知消息结果：{}， 消息内容：{}", firstTS, sendFlag, msgBuff);
-			}
 		}
 
 		if (!success) {
